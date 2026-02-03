@@ -1,23 +1,18 @@
 {
-    // 使用 IntelliSense 了解相关属性。 
-    // 悬停以查看现有属性的描述。
-    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        
         {
-            "type": "stlinkgdbtarget",
+            "name": "Manual_DAPLink_Connect",
+            "type": "cortex-debug",
             "request": "launch",
-            "name": "STM32Cube: STM32 Launch ST-Link GDB Server",
-            "origin": "snippet",
-            "cwd": "${workspaceFolder}",
-            "preBuild": "${command:st-stm32-ide-debug-launch.build}",
-            "runEntry": "main",
-            "imagesAndSymbols": [
-                {
-                    "imageFileName": "${command:st-stm32-ide-debug-launch.get-projects-binary-from-context1}"
-                }
-            ]
+            "servertype": "external", // 告诉 VS Code 别自己开服务器了，我已经开好了
+            "gdbTarget": "127.0.0.1:3333",
+            "runToEntryPoint": "main",
+            "armToolchainPath": "D:\\STM32CubeIDE_2.0.0\\STM32CubeIDE\\plugins\\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.100.202509120712\\tools\\bin",
+            "executable": "D:/hal/VL6180x/build/debug/VL6180x.elf",
+            "targetId": "stm32f103c8"
         }
     ]
 }
+
+//注意这个json可以使用了，但是要带上pyocd gdbserver --target stm32f103c8才能使用
