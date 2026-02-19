@@ -225,7 +225,7 @@ uint16_t received_dist = 0;
         }
         else if (received_dist>=100)
         {
-          HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+          HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
           /* code */
         }
         
