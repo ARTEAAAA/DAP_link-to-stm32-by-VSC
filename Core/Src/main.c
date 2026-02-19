@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 #include "i2c.h"
 #include "usart.h"
 #include "gpio.h"
@@ -25,6 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include "Vl6180x_i2c.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -34,6 +36,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define VL6180X_ADDR (0x29 << 1)
+
+// 核心寄存器地址
 
 /* USER CODE END PD */
 
@@ -45,36 +50,14 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+volatile uint8_t measure_mode = 1; // 0=未测量，1=单次，2=连续
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
-void VL_Write(uint16_t reg, uint8_t data) {
-    HAL_I2C_Mem_Write(&hi2c1, 0x52, reg, I2C_MEMADD_SIZE_16BIT, &data, 1, 100);
-}
 
-uint8_t VL_Read(uint16_t reg) {
-    uint8_t data = 0;
-    HAL_I2C_Mem_Read(&hi2c1, 0x52, reg, I2C_MEMADD_SIZE_16BIT, &data, 1, 100);
-    return data;
-}
-
-// 官方要求的必要初始化
-void VL_Init() {
-    // 检查 ID 是否为 0xB4
-    while(VL_Read(0x000) != 0xB4) {
-        HAL_Delay(100); // 如果 ID 不对，就在这死循环，检查接线
-    }
-    
-    // 以下是必须加载的设置
-    VL_Write(0x0207, 0x01); VL_Write(0x0208, 0x01);
-    VL_Write(0x0096, 0x00); VL_Write(0x0097, 0xfd);
-    VL_Write(0x00e3, 0x00); VL_Write(0x00e4, 0x04);
-    VL_Write(0x00e6, 0x01); VL_Write(0x00e7, 0x03);
-    VL_Write(0x0015, 0x07); // 清除中断
-}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -110,38 +93,31 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
+
   MX_GPIO_Init();
   MX_I2C1_Init();
-  MX_I2C2_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  VL_Init(); // 初始化 
+  VL6180X_Init(); // 初始化 VL6180X 传感器
+  printf("Base Hardware Init OK!\r\n"); // <--- 测试串口是否活着
   /* USER CODE END 2 */
+
+  /* Init scheduler */
+  osKernelInitialize();
+
+  /* Call init function for freertos objects (in cmsis_os2.c) */
+  MX_FREERTOS_Init();
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 while (1)
 {
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-    HAL_Delay(500);
-    //1. 发起测距
-    VL_Write(0x018, 0x01);
-    
-    // 2. 等待测量完成 (判断 0x04F 的第 2 位)
-    while((VL_Read(0x04F) & 0x04) == 0);
 
-    // 3. 读取结果 (寄存器 0x062)
-    uint8_t distance = VL_Read(0x062);
-
-    // 4. 清除标志位
-    VL_Write(0x015, 0x07);
-
-    // 5. 串口发送（发送给 ESP32-S3）
-    char buf[20];
-    int len = sprintf(buf, "Dist: %d mm\r\n", distance);
-    HAL_UART_Transmit(&huart1, (uint8_t*)buf, len, 100);
-
-    HAL_Delay(100); 
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -189,8 +165,32 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+int _write(int file, char *ptr, int len) {
+    HAL_UART_Transmit(&huart1, (uint8_t *)ptr, len, 500);
+    return len;
+}
 /* USER CODE END 4 */
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM4 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM4) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
