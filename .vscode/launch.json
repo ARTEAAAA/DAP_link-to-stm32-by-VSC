@@ -1,18 +1,28 @@
 {
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Manual_DAPLink_Connect",
-            "type": "cortex-debug",
+            "cwd": "${workspaceRoot}",
+            "executable": "${workspaceRoot}/build/Debug/VL6180x.elf",
+            "name": "Debug with OpenOCD",
             "request": "launch",
-            "servertype": "external", // 告诉 VS Code 别自己开服务器了，我已经开好了
-            "gdbTarget": "127.0.0.1:3333",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "configFiles": [
+                "interface/cmsis-dap.cfg",
+                "target/stm32f1x.cfg"
+            ],
+            "serverpath": "D:\\Openocd\\xpack-openocd-0.12.0-7-win32-x64\\xpack-openocd-0.12.0-7\\bin\\openocd.exe",
+            "searchDir": [
+                "D:\\Openocd\\xpack-openocd-0.12.0-7-win32-x64\\xpack-openocd-0.12.0-7\\openocd\\scripts"
+            ],
             "runToEntryPoint": "main",
-            "armToolchainPath": "D:\\STM32CubeIDE_2.0.0\\STM32CubeIDE\\plugins\\com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.100.202509120712\\tools\\bin",
-            "executable": "D:/hal/VL6180x/build/debug/VL6180x.elf",
-            "targetId": "stm32f103c8"
+            "showDevDebugOutput": "none",
+            "gdbPath": "C:\\Users\\ARTEAA\\AppData\\Local\\stm32cube\\bundles\\gnu-tools-for-stm32\\14.3.1+st.2\\bin\\arm-none-eabi-gdb.exe"
         }
+
     ]
 }
-
-//注意这个json可以使用了，但是要带上pyocd gdbserver --target stm32f103c8才能使用
